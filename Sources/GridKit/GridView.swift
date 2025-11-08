@@ -7,10 +7,48 @@
 
 import SwiftUI
 
-public struct UniversalGridView: View {
+/// A ``GridView`` arranges a collection of ``GridElement`` into a structured, adaptive layout.
+///
+/// # Overview
+/// ``GridView`` displays a set of ``GridElement`` values in a flexible,
+/// grid-based layout. Each element defines its own size in grid units,
+/// and the view places them according to the number of available columns with the spacing you provide.
+///
+/// The grid automatically arranges elements to fill available space while remaining the order given in the set,
+/// adjusting the layout as elements change in order.
+/// This makes ``GridView`` well suited for widget-style interfaces, customizable dashboards,
+/// and other layouts where items vary in shape.
+///
+/// ## Example
+///
+/// ```swift
+/// @State var items: [GridElement] = [
+/// GridElement(width: 2, height: 2, content: { simpleView(number: 1) }),
+/// GridElement(width: 2, height: 1, content: { simpleView(number: 2) }),
+/// GridElement(width: 1, height: 1, content: { simpleView(number: 3) }),
+/// GridElement(width: 1, height: 1, content: { simpleView(number: 4) })
+/// ]
+///
+/// GridView(columns: 4, spacing: 8, items: $items)
+/// ```
+/// - Important: The Order of the Elements defines the Order of the Elements in the Grid.
+///
+/// ![A Simple Example of the Grid View](GridExample)
+///
+/// - Warning: Ensure that the width and height of each element do not exceed the grid's capacity. Elements that extend beyond the number of columns will lead to undefined behaviour.
+public struct GridView: View {
+    
+    /// Defines how many columns the grid has.
+    ///
+    /// It is labled as `CGFloat` but it must represent positive even values.
     public let columns: CGFloat
+    
+    /// Defines the spacing between elements in pixel values.
     public let spacing: CGFloat
     
+    /// The items which should be shown by the ``GridView``.
+    ///
+    /// - Important: ``GridView`` lays out elements in sequence and does not modify their order during placement.
     @Binding public var items: [GridElement]
     
     private var showAnimations: Bool = true
@@ -127,12 +165,14 @@ public struct UniversalGridView: View {
         .frame(height: (cellDimensions.height + spacing) * CGFloat(grid.maxHeight))
     }
     
-    public func animate(_ value: Bool) -> UniversalGridView {
-        return UniversalGridView(columns: columns, spacing: spacing, items: $items, showAnimations: value, dragAndDrop: dragAndDrop)
+    /// Use this function to disable animations.
+    public func animate(_ value: Bool = false) -> GridView {
+        return GridView(columns: columns, spacing: spacing, items: $items, showAnimations: value, dragAndDrop: dragAndDrop)
     }
     
-    public func dragAndDrop(_ value: Bool) -> UniversalGridView {
-        return UniversalGridView(columns: columns, spacing: spacing, items: $items, showAnimations: showAnimations, dragAndDrop: value)
+    /// Use this function to disable drag and drop.
+    public func dragAndDrop(_ value: Bool = false) -> GridView {
+        return GridView(columns: columns, spacing: spacing, items: $items, showAnimations: showAnimations, dragAndDrop: value)
     }
     
     private func getGridLocation(for dragging: GridElement, at translation: CGSize) -> GridPoint {
@@ -152,4 +192,28 @@ public struct UniversalGridView: View {
             assert(item.size.width <= Int(columns), "Width of item is to wide. \(item) The width is: \(item.size.width) but max width is: \(columns)")
         }
     }
+}
+
+struct simpleView: View {
+    let number: Int
+    
+    var body: some View {
+        ZStack {
+            Rectangle()
+                .foregroundStyle(.quinary)
+            Text(number, format: .number)
+        }
+    }
+}
+
+#Preview {
+    @Previewable @State var items: [GridElement] = [
+        GridElement(width: 2, height: 2, content: { simpleView(number: 1) }),
+        GridElement(width: 2, height: 1, content: { simpleView(number: 2) }),
+        GridElement(width: 1, height: 1, content: { simpleView(number: 3) }),
+        GridElement(width: 1, height: 1, content: { simpleView(number: 4) })
+    ]
+    
+    GridView(columns: 4, spacing: 8, items: $items)
+        .padding()
 }

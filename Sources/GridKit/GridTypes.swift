@@ -36,15 +36,30 @@ extension GridPoint: Comparable {
     }
 }
 
+/// A structure that contains the width and height values in grid units.
+///
+/// # Overview
+/// ``GridSize`` describes how much space an element occupies within the grid layout.
+/// Instead of using pixel-based dimensions,
+/// size is expressed in *grid units* which allows the layout to adapt automatically to different screen sizes and configurations.
+///
 public struct GridSize: Equatable {
+    /// The number of grid columns the element spans.
     public var width: Int
+    /// The number of grid rows the element spans.
     public var height: Int
     
-    static func square(with value: Int = 1) -> GridSize {
+    /// Creates an instance with zero width and height.
+    public static var standard: GridSize {
+        self.init()
+    }
+    
+    /// Creates a size where width and height are equal to the input.
+    public static func square(with value: Int = 1) -> GridSize {
         return self.init(width: value, height: value)
     }
     
-    public init(width: Int, height: Int) {
+    public init(width: Int = 1, height: Int = 1) {
         assert(width > 0 && height > 0, "width and height must be greater than 0 you tried to initilize with width: \(width) and height: \(height)")
         self.width = width
         self.height = height
