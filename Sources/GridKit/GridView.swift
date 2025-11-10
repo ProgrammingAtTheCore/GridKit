@@ -51,6 +51,8 @@ public struct GridView: View {
     /// - Important: ``GridView`` lays out elements in sequence and does not modify their order during placement.
     @Binding public var items: [GridElement]
     
+    private var isEditing: Bool = false
+    
     private var showAnimations: Bool = true
     private var dragAndDrop: Bool = true
     
@@ -60,10 +62,11 @@ public struct GridView: View {
         self._items = items
     }
     
-    private init(columns: CGFloat, spacing: CGFloat, items: Binding<[GridElement]>, showAnimations: Bool, dragAndDrop: Bool) {
+    private init(columns: CGFloat, spacing: CGFloat, items: Binding<[GridElement]>, isEditing: Bool, showAnimations: Bool, dragAndDrop: Bool) {
         self.columns = columns
         self.spacing = spacing
         self._items = items
+        self.isEditing = isEditing
         self.showAnimations = showAnimations
         self.dragAndDrop = dragAndDrop
     }
@@ -116,12 +119,15 @@ public struct GridView: View {
                 ForEach(items) { (item: GridElement) in
                     let width: CGFloat = cellDimensions.width * item.cgFloatWidth + spacing * (item.cgFloatWidth - 1)
                     let height: CGFloat = cellDimensions.height * item.cgFloatHeight + spacing * (item.cgFloatHeight - 1)
-                        
+                    
+                    let xPosition: CGFloat = (cellDimensions.width + spacing) * item.cgFloatX
+                    let yPosition: CGFloat = (cellDimensions.height + spacing) * item.cgFloatY
+                    
                     item.content
                         .frame(width: width, height: height)
                         .position(
-                            x: width / 2 + (cellDimensions.width + spacing) * item.cgFloatX,
-                            y: height / 2 + (cellDimensions.height + spacing) * item.cgFloatY
+                            x: width / 2 + xPosition,
+                            y: height / 2 + yPosition
                         )
                         .gesture(
                             dragAndDrop ?
@@ -132,6 +138,22 @@ public struct GridView: View {
                                 .sequenced(before: drag)
                             : nil
                         )
+                    
+                    if isEditing {
+                        Button(action: {
+                            withAnimation {
+                                items.removeAll(where: { $0.id == item.id })
+                                items = try! grid.place(elements: items)
+                            }
+                        }, label: {
+                            Text("-")
+                        })
+                        .buttonStyle(.borderedProminent)
+                        .position(
+                            x: xPosition,
+                            y: yPosition
+                        )
+                    }
                 }
             }
             .onAppear {
@@ -147,6 +169,7 @@ public struct GridView: View {
                     fatalError("\(error)")
                 }
             }
+            /*
             .onChange(of: items) {
                 checkWidthOfItems()
                 do {
@@ -161,18 +184,23 @@ public struct GridView: View {
                     fatalError("\(error)")
                 }
             }
+            */
         }
         .frame(height: (cellDimensions.height + spacing) * CGFloat(grid.maxHeight))
     }
     
     /// Use this function to disable animations.
     public func animate(_ value: Bool = false) -> GridView {
-        return GridView(columns: columns, spacing: spacing, items: $items, showAnimations: value, dragAndDrop: dragAndDrop)
+        return GridView(columns: columns, spacing: spacing, items: $items, isEditing: isEditing, showAnimations: value, dragAndDrop: dragAndDrop)
     }
     
     /// Use this function to disable drag and drop.
     public func dragAndDrop(_ value: Bool = false) -> GridView {
-        return GridView(columns: columns, spacing: spacing, items: $items, showAnimations: showAnimations, dragAndDrop: value)
+        return GridView(columns: columns, spacing: spacing, items: $items, isEditing: isEditing, showAnimations: showAnimations, dragAndDrop: value)
+    }
+    
+    public func edittingMode(_ value: Bool) -> GridView {
+        return GridView(columns: columns, spacing: spacing, items: $items, isEditing: value, showAnimations: showAnimations, dragAndDrop: dragAndDrop)
     }
     
     private func getGridLocation(for dragging: GridElement, at translation: CGSize) -> GridPoint {
@@ -209,11 +237,16 @@ struct simpleView: View {
 #Preview {
     @Previewable @State var items: [GridElement] = [
         GridElement(width: 2, height: 2, content: { simpleView(number: 1) }),
-        GridElement(width: 2, height: 1, content: { simpleView(number: 2) }),
+        GridElement(width: 3, height: 1, content: { simpleView(number: 2) }),
         GridElement(width: 1, height: 1, content: { simpleView(number: 3) }),
         GridElement(width: 1, height: 1, content: { simpleView(number: 4) })
     ]
     
-    GridView(columns: 4, spacing: 8, items: $items)
-        .padding()
+    VStack {
+        GridView(columns: 4, spacing: 8, items: $items)
+            .edittingMode(true)
+            .padding()
+        
+        Spacer()
+    }
 }
