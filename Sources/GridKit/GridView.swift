@@ -112,10 +112,10 @@ public struct GridView: View {
                                 items = try! grid.place(elements: items)
                             }
                         }, label: {
-                            Text("-")
+                            config.deletionButtonLabel
                         })
-                        .buttonStyle(.borderedProminent)
-                        .position(calcButtonLocation(position: position, size: size, alignment: config.alignment))
+                        .position(calcButtonLocation(position: position, size: size, alignment: config.deletionButtonAlignment)
+                        )
                     }
                 }
             }
@@ -132,11 +132,10 @@ public struct GridView: View {
                     fatalError("\(error)")
                 }
             }
-            /*
             .onChange(of: items) {
                 checkWidthOfItems()
                 do {
-                    if showAnimations {
+                    if config.showAnimations {
                         try withAnimation {
                             items = try grid.place(elements: items)
                         }
@@ -147,7 +146,6 @@ public struct GridView: View {
                     fatalError("\(error)")
                 }
             }
-            */
         }
         .frame(height: (cellDimensions.height + spacing) * CGFloat(grid.maxHeight))
     }
@@ -166,15 +164,18 @@ public struct GridView: View {
         return copy
     }
     
+    /// Use this function to toggle between normal mode and editing mode.
     public func edittingMode(_ value: Bool) -> GridView {
         var copy = self
         copy.config.isEditing = value
         return copy
     }
     
-    public func deletionButtonStyle(alignment: Alignment) -> GridView {
+    /// Design and arrange the deletion button wherever you prefer.
+    public func deletionButtonStyle(alignment: Alignment = .topLeading, @ViewBuilder label: () -> any View = { Image(systemName: "minus") }) -> GridView {
         var copy = self
-        copy.config.alignment = alignment
+        copy.config.deletionButtonAlignment = alignment
+        copy.config.deletionButtonLabel = AnyView(label())
         return copy
     }
     
@@ -270,7 +271,10 @@ struct simpleView: View {
     VStack {
         GridView(columns: 4, spacing: 8, items: $items)
             .edittingMode(true)
-            .deletionButtonStyle(alignment: .topLeading)
+            .deletionButtonStyle(alignment: .topLeading, label: {
+                Label("Deletion", systemImage: "minus")
+                    .labelStyle(.iconOnly)
+            })
             .padding()
         
         Spacer()

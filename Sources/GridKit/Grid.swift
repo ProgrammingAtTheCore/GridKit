@@ -13,7 +13,8 @@ struct GridConfig {
     var showAnimations: Bool = false
     var dragAndDrop: Bool = true
  
-    var alignment: Alignment = .topLeading
+    var deletionButtonAlignment: Alignment = .topLeading
+    var deletionButtonLabel: AnyView = AnyView(Image(systemName: "minus"))
 }
 
 struct GridMap {

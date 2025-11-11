@@ -8,7 +8,7 @@ import PackageDescription
 let package = Package(
     name: "GridKit",
     platforms: [
-        .iOS(.v17),
+        .iOS(.v17), // version: 17
         .macOS(.v14)
     ],
     products: [
