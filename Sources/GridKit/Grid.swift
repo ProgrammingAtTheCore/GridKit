@@ -8,6 +8,14 @@
 
 import SwiftUI
 
+struct GridConfig {
+    var isEditing: Bool = false
+    var showAnimations: Bool = false
+    var dragAndDrop: Bool = true
+ 
+    var alignment: Alignment = .topLeading
+}
+
 struct GridMap {
     let width: Int
     var maxHeight: Int = 2
