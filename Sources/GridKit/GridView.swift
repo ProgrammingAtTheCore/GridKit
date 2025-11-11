@@ -51,27 +51,16 @@ public struct GridView: View {
     /// - Important: ``GridView`` lays out elements in sequence and does not modify their order during placement.
     @Binding public var items: [GridElement]
     
-    private var showAnimations: Bool = true
-    private var dragAndDrop: Bool = true
-    
     public init(columns: Int, spacing: Int, items: Binding<[GridElement]>) {
         self.columns = CGFloat(columns)
         self.spacing = CGFloat(spacing)
         self._items = items
     }
     
-    private init(columns: CGFloat, spacing: CGFloat, items: Binding<[GridElement]>, showAnimations: Bool, dragAndDrop: Bool) {
-        self.columns = columns
-        self.spacing = spacing
-        self._items = items
-        self.showAnimations = showAnimations
-        self.dragAndDrop = dragAndDrop
-    }
-    
-    @State private var grid: GridMap = GridMap(width: 4)
+    private var config: GridConfig = GridConfig()
     
     @State private var cellDimensions: CGSize = .zero
-    
+    @State private var grid: GridMap = GridMap(width: 4)
     @State private var draggingItem: GridElement? = nil
     @State private var lastLocation: GridPoint? = nil
     
@@ -80,32 +69,7 @@ public struct GridView: View {
             let drag = DragGesture()
                 .onChanged { value in
                     guard let dragging = draggingItem else { return }
-                    let newLocation: GridPoint = getGridLocation(for: dragging, at: value.translation)
-                    if newLocation != lastLocation {
-                        lastLocation = newLocation
-                        
-                        let itemIndex: Int = items.firstIndex(where: { dragging.id == $0.id })!
-                        var item: GridElement = items[itemIndex]
-                            
-                        items.remove(at: itemIndex)
-                        item.position = newLocation
-                        
-                        if showAnimations {
-                            withAnimation {
-                                do {
-                                    items = try grid.place(elements: items, dragElement: item)
-                                } catch {
-                                    fatalError("\(error)")
-                                }
-                            }
-                        } else {
-                            do {
-                                items = try grid.place(elements: items, dragElement: item)
-                            } catch {
-                                fatalError("\(error)")
-                            }
-                        }
-                    }
+                    placeDragging(dragging: dragging, translation: value.translation)
                 }
                 .onEnded { _ in
                     draggingItem = nil
@@ -114,17 +78,25 @@ public struct GridView: View {
             
             ZStack {
                 ForEach(items) { (item: GridElement) in
-                    let width: CGFloat = cellDimensions.width * item.cgFloatWidth + spacing * (item.cgFloatWidth - 1)
-                    let height: CGFloat = cellDimensions.height * item.cgFloatHeight + spacing * (item.cgFloatHeight - 1)
-                        
+                    let size: CGSize = CGSize(
+                        width: cellDimensions.width * item.cgFloatWidth + spacing * (item.cgFloatWidth - 1),
+                        height: cellDimensions.height * item.cgFloatHeight + spacing * (item.cgFloatHeight - 1))
+                    
+                    let position: CGPoint = CGPoint(
+                        x: (cellDimensions.width + spacing) * item.cgFloatX,
+                        y: (cellDimensions.height + spacing) * item.cgFloatY)
+                    
                     item.content
-                        .frame(width: width, height: height)
+                        .frame(
+                            width: size.width,
+                            height: size.height
+                        )
                         .position(
-                            x: width / 2 + (cellDimensions.width + spacing) * item.cgFloatX,
-                            y: height / 2 + (cellDimensions.height + spacing) * item.cgFloatY
+                            x: size.width / 2 + position.x,
+                            y: size.height / 2 + position.y
                         )
                         .gesture(
-                            dragAndDrop ?
+                            config.dragAndDrop ?
                             LongPressGesture()
                                 .onEnded { _ in
                                     draggingItem = item
@@ -132,6 +104,19 @@ public struct GridView: View {
                                 .sequenced(before: drag)
                             : nil
                         )
+                    
+                    if config.isEditing {
+                        Button(action: {
+                            withAnimation {
+                                items.removeAll(where: { $0.id == item.id })
+                                items = try! grid.place(elements: items)
+                            }
+                        }, label: {
+                            config.deletionButtonLabel
+                        })
+                        .position(calcButtonLocation(position: position, size: size, alignment: config.deletionButtonAlignment)
+                        )
+                    }
                 }
             }
             .onAppear {
@@ -150,7 +135,7 @@ public struct GridView: View {
             .onChange(of: items) {
                 checkWidthOfItems()
                 do {
-                    if showAnimations {
+                    if config.showAnimations {
                         try withAnimation {
                             items = try grid.place(elements: items)
                         }
@@ -167,12 +152,60 @@ public struct GridView: View {
     
     /// Use this function to disable animations.
     public func animate(_ value: Bool = false) -> GridView {
-        return GridView(columns: columns, spacing: spacing, items: $items, showAnimations: value, dragAndDrop: dragAndDrop)
+        var copy = self
+        copy.config.showAnimations = value
+        return copy
     }
     
     /// Use this function to disable drag and drop.
     public func dragAndDrop(_ value: Bool = false) -> GridView {
-        return GridView(columns: columns, spacing: spacing, items: $items, showAnimations: showAnimations, dragAndDrop: value)
+        var copy = self
+        copy.config.dragAndDrop = value
+        return copy
+    }
+    
+    /// Use this function to toggle between normal mode and editing mode.
+    public func edittingMode(_ value: Bool) -> GridView {
+        var copy = self
+        copy.config.isEditing = value
+        return copy
+    }
+    
+    /// Design and arrange the deletion button wherever you prefer.
+    public func deletionButtonStyle(alignment: Alignment = .topLeading, @ViewBuilder label: () -> any View = { Image(systemName: "minus") }) -> GridView {
+        var copy = self
+        copy.config.deletionButtonAlignment = alignment
+        copy.config.deletionButtonLabel = AnyView(label())
+        return copy
+    }
+    
+    private func placeDragging(dragging: GridElement, translation: CGSize) {
+        let newLocation: GridPoint = getGridLocation(for: dragging, at: translation)
+        if newLocation != lastLocation {
+            lastLocation = newLocation
+            
+            let itemIndex: Int = items.firstIndex(where: { dragging.id == $0.id })!
+            var item: GridElement = items[itemIndex]
+                
+            items.remove(at: itemIndex)
+            item.position = newLocation
+            
+            if config.showAnimations {
+                withAnimation {
+                    do {
+                        items = try grid.place(elements: items, dragElement: item)
+                    } catch {
+                        fatalError("\(error)")
+                    }
+                }
+            } else {
+                do {
+                    items = try grid.place(elements: items, dragElement: item)
+                } catch {
+                    fatalError("\(error)")
+                }
+            }
+        }
     }
     
     private func getGridLocation(for dragging: GridElement, at translation: CGSize) -> GridPoint {
@@ -187,6 +220,27 @@ public struct GridView: View {
         }
         return GridPoint(x: x, y: y)
     }
+    
+    private func calcButtonLocation(position: CGPoint, size: CGSize, alignment: Alignment) -> CGPoint {
+        var copy: CGPoint = position
+        
+        switch alignment.horizontal {
+        case .leading: copy.x = position.x
+        case .center: copy.x = position.x + size.width / 2
+        case .trailing: copy.x = position.x + size.width
+        default: copy.x = position.x
+        }
+        
+        switch alignment.vertical {
+        case .top: copy.y = position.y
+        case .center: copy.y = position.y + size.height / 2
+        case .bottom: copy.y = position.y + size.height
+        default: copy.y = position.y
+        }
+        
+        return copy
+    }
+    
     private func checkWidthOfItems() {
         for item in items {
             assert(item.size.width <= Int(columns), "Width of item is to wide. \(item) The width is: \(item.size.width) but max width is: \(columns)")
@@ -209,11 +263,20 @@ struct simpleView: View {
 #Preview {
     @Previewable @State var items: [GridElement] = [
         GridElement(width: 2, height: 2, content: { simpleView(number: 1) }),
-        GridElement(width: 2, height: 1, content: { simpleView(number: 2) }),
+        GridElement(width: 3, height: 1, content: { simpleView(number: 2) }),
         GridElement(width: 1, height: 1, content: { simpleView(number: 3) }),
         GridElement(width: 1, height: 1, content: { simpleView(number: 4) })
     ]
     
-    GridView(columns: 4, spacing: 8, items: $items)
-        .padding()
+    VStack {
+        GridView(columns: 4, spacing: 8, items: $items)
+            .edittingMode(true)
+            .deletionButtonStyle(alignment: .topLeading, label: {
+                Label("Deletion", systemImage: "minus")
+                    .labelStyle(.iconOnly)
+            })
+            .padding()
+        
+        Spacer()
+    }
 }
