@@ -14,11 +14,11 @@ Additionally, GridKit includes built-in Drag & Drop support, enabling users to r
 ## Example
 
 ```swift
-@State var items: [GridElement] = [
-    GridElement(width: 2, height: 2) { simpleView(number: 1) },
-    GridElement(width: 2, height: 1) { simpleView(number: 2) },
-    GridElement(width: 1, height: 1) { simpleView(number: 3) },
-    GridElement(width: 1, height: 1) { simpleView(number: 4) }
+@State var items: [GridItem] = [
+    GridItem(width: 2, height: 2) { simpleView(number: 1) },
+    GridItem(width: 2, height: 1) { simpleView(number: 2) },
+    GridItem(width: 1, height: 1) { simpleView(number: 3) },
+    GridItem(width: 1, height: 1) { simpleView(number: 4) }
 ]
 
 var body: some View {
@@ -33,6 +33,21 @@ This example generates a layout sonsistin of:
 - Two smaller square elements (1x1 each)
 
 All arranged within a 4-column grid.
+
+## Widgets
+GridKit also provides a widget layer that supports multiple sizes per widget.
+
+```swift
+@State var widgets: [GridWidget] = [
+    GridWidget(supportedSizes: [.square(with: 1), GridSize(width: 2, height: 1)]) { size in
+        widgetView(size: size)
+    }
+]
+
+var body: some View {
+    WidgetGridView(columns: 4, spacing: 8, widgets: $widgets)
+}
+```
 
 ## Installation
 ### Swift Package Manager

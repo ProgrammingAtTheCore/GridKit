@@ -6,72 +6,22 @@
 //
 
 import SwiftUI
-///
+
+public protocol GridContentItem: GridLayoutItem {
+    var content: AnyView { get }
+}
+
 /// A structure that defines the visual appearance and size of an item within the ``GridView``.
 ///
 /// # Overview
-/// A ``GridElement`` represents a single item within the ``GridView``.
-/// Each element defines its own size in terms of grid units (``GridSize``),
+/// A ``GridItem`` represents a single item within the ``GridView``.
+/// Each item defines its own size in terms of grid units (``GridSize``),
 /// along with the view content it renders.
-/// By combining multiple elements of diffrent sizes,
-/// you can create adaptive, widget-like layouts similar to a home screen or dahboard interface.
-///
-/// ``GridElement`` works closely with ``GridView``.
-/// The grid uses the dimensions you provide to place each item in an available position,
-/// ensuring that elements align consistently and maintain a balanced visual structure.
-///
-/// ## Example
-///
-/// ```swift
-/// @State var items: [GridElement] = [
-/// GridElement(width: 2, height: 2, content: { simpleView(number: 1) }),
-/// GridElement(width: 2, height: 1, content: { simpleView(number: 2) }),
-/// GridElement(width: 1, height: 1, content: { simpleView(number: 3) }),
-/// GridElement(width: 1, height: 1, content: { simpleView(number: 4) })
-/// ]
-///
-/// GridView(columns: 4, spacing: 8, items: $items)
-/// ```
-/// - Important: The Order of the Elements defines the Order of the Elements in the Grid.
-///
-/// ![A Simple Example of the Grid View](GridExample)
-///
-/// - Warning: Ensure that the width and height of each element do not exceed the grid's capacity.
-/// Elements that extend beyond the number of columns will lead to undefined behaviour.
-///
-public struct GridElement: Identifiable {
+public struct GridItem: GridContentItem, Equatable {
     public let id: UUID
-    var position: GridPoint
-    
-    /// Defines the size of this element in grid units.
-    ///
-    /// # Overview
-    /// The width and height values determine how much space the element occupies within the grid layout.
+    public var position: GridPoint
     public var size: GridSize
-    
-    /// Represents the views content.
-    ///
-    /// # Overview
-    /// The ``GridElement/content`` property provides the view that represents the element within the grid.
     public var content: AnyView
-    
-    var cgFloatX: CGFloat {
-        CGFloat(position.x)
-    }
-    var cgFloatY: CGFloat {
-        CGFloat(position.y)
-    }
-    var cgFloatWidth: CGFloat {
-        CGFloat(size.width)
-    }
-    var cgFloatHeight: CGFloat {
-        CGFloat(size.height)
-    }
-    
-    var rect: GridRect {
-        GridRect(position: position, size: size)
-    }
-    
     
     public init<Content: View>(id: UUID = UUID(), width: Int, height: Int, @ViewBuilder content: () -> Content) {
         self.id = id
@@ -93,18 +43,58 @@ public struct GridElement: Identifiable {
         self.size = size
         self.content = content
     }
+    
+    public static func == (lhs: GridItem, rhs: GridItem) -> Bool {
+        lhs.id == rhs.id && lhs.position == rhs.position && lhs.size == rhs.size
+    }
 }
 
-extension GridElement: Equatable {
-    public static func == (lhs: GridElement, rhs: GridElement) -> Bool {
-        if lhs.id == rhs.id,
-           lhs.position == rhs.position,
-           lhs.size == rhs.size {
-            return true
-        } else {
-            return false
-        }
+/// A widget that can render different layouts depending on its active size.
+///
+/// Widgets advertise multiple supported sizes and pick one active size to render.
+public struct GridWidget: GridContentItem, Equatable {
+    public let id: UUID
+    public var position: GridPoint
+    public var size: GridSize
+    public let supportedSizes: [GridSize]
+    
+    private let renderer: (GridSize) -> AnyView
+    
+    public var content: AnyView {
+        renderer(size)
     }
     
+    public init<Content: View>(
+        id: UUID = UUID(),
+        supportedSizes: [GridSize],
+        size: GridSize? = nil,
+        @ViewBuilder content: @escaping (GridSize) -> Content
+    ) {
+        precondition(!supportedSizes.isEmpty, "supportedSizes must not be empty")
+        self.id = id
+        self.position = .zero
+        self.supportedSizes = supportedSizes
+        let resolvedSize = size ?? supportedSizes[0]
+        self.size = supportedSizes.contains(resolvedSize) ? resolvedSize : supportedSizes[0]
+        self.renderer = { AnyView(content($0)) }
+    }
     
+    public mutating func setSize(_ size: GridSize) {
+        guard supportedSizes.contains(size) else {
+            self.size = supportedSizes[0]
+            return
+        }
+        self.size = size
+    }
+    
+    public func isSizeSupported(_ size: GridSize) -> Bool {
+        supportedSizes.contains(size)
+    }
+    
+    public static func == (lhs: GridWidget, rhs: GridWidget) -> Bool {
+        lhs.id == rhs.id && lhs.position == rhs.position && lhs.size == rhs.size && lhs.supportedSizes == rhs.supportedSizes
+    }
 }
+
+@available(*, deprecated, message: "Use GridItem")
+public typealias GridElement = GridItem

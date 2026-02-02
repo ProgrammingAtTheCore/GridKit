@@ -5,13 +5,23 @@
 //  Created by ProgrammingAtTheCore on 10/31/2025.
 //
 
-extension GridElement: CustomStringConvertible, CustomDebugStringConvertible {
+extension GridItem: CustomStringConvertible, CustomDebugStringConvertible {
     public var description: String {
-        "Grid Element(id: \(id) x: \(position.x), y: \(position.y), width: \(size.width), height: \(size.height))"
+        "Grid Item(id: \(id) x: \(position.x), y: \(position.y), width: \(size.width), height: \(size.height))"
     }
     
     public var debugDescription: String {
-        "Grid Element(x: \(position.x), y: \(position.y), width: \(size.width), height: \(size.height))"
+        "Grid Item(x: \(position.x), y: \(position.y), width: \(size.width), height: \(size.height))"
+    }
+}
+
+extension GridWidget: CustomStringConvertible, CustomDebugStringConvertible {
+    public var description: String {
+        "Grid Widget(id: \(id) x: \(position.x), y: \(position.y), width: \(size.width), height: \(size.height))"
+    }
+    
+    public var debugDescription: String {
+        "Grid Widget(x: \(position.x), y: \(position.y), width: \(size.width), height: \(size.height))"
     }
 }
 
@@ -22,8 +32,8 @@ extension GridError: CustomStringConvertible {
             return "⛔️ Position \(position) out of bounds."
         case let .occupied(position):
             return "⛔️ Cell \(position) is already occupied."
-        case .unknown:
-            return "⛔️ Unknown Error occured."
+        case let .invalidItemSize(size, columns):
+            return "⛔️ Item size \(size) exceeds grid columns (\(columns))."
         }
     }
 }
@@ -48,13 +58,13 @@ extension GridSize: CustomStringConvertible, CustomDebugStringConvertible {
     }
 }
 
-extension GridMap: CustomStringConvertible {
-    var description: String {
+extension GridLayout: CustomStringConvertible {
+    public var description: String {
         var result = "Grid:\n  |"
         
         var column: Int = 0
         for cell in cells {
-            if column >= width {
+            if column >= columns {
                 column = 0
                 result += "\n  |"
             }
