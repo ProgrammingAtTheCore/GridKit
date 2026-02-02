@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-
 ///
 /// A structure that defines the visual appearance and size of an item within the ``GridView``.
 ///
@@ -74,22 +73,22 @@ public struct GridElement: Identifiable {
     }
     
     
-    public init<Content: View>(width: Int, height: Int, @ViewBuilder content: () -> Content) {
-        self.id = UUID()
+    public init<Content: View>(id: UUID = UUID(), width: Int, height: Int, @ViewBuilder content: () -> Content) {
+        self.id = id
         self.position = .zero
         self.size = GridSize(width: width, height: height)
         self.content = AnyView(content())
     }
     
-    public init<Content: View>(size: GridSize, @ViewBuilder content: () -> Content) {
-        self.id = UUID()
+    public init<Content: View>(id: UUID = UUID(), size: GridSize, @ViewBuilder content: () -> Content) {
+        self.id = id
         self.position = .zero
         self.size = size
         self.content = AnyView(content())
     }
     
-    public init(size: GridSize, content: AnyView) {
-        self.id = UUID()
+    public init(id: UUID = UUID(), size: GridSize, content: AnyView) {
+        self.id = id
         self.position = .zero
         self.size = size
         self.content = content
@@ -99,6 +98,7 @@ public struct GridElement: Identifiable {
 extension GridElement: Equatable {
     public static func == (lhs: GridElement, rhs: GridElement) -> Bool {
         if lhs.id == rhs.id,
+           lhs.position == rhs.position,
            lhs.size == rhs.size {
             return true
         } else {

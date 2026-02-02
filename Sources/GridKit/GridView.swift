@@ -51,7 +51,7 @@ public struct GridView: View {
     /// - Important: ``GridView`` lays out elements in sequence and does not modify their order during placement.
     @Binding public var items: [GridElement]
     
-    public init(columns: Int, spacing: Int, items: Binding<[GridElement]>) {
+    public init(columns: Int, spacing: CGFloat, items: Binding<[GridElement]>) {
         self.columns = CGFloat(columns)
         self.spacing = CGFloat(spacing)
         self._items = items
@@ -119,35 +119,40 @@ public struct GridView: View {
                     }
                 }
             }
-            .onAppear {
-                let cellSize = (geometry.size.width - spacing * (columns - 1)) / columns
-                cellDimensions = CGSize(
-                    width: cellSize,
-                    height: cellSize
-                )
-                checkWidthOfItems()
-                do {
-                    items = try grid.place(elements: items)
-                } catch {
-                    fatalError("\(error)")
+            .onChange(of: geometry.size.width) { oldValue, newValue in
+                if geometry.size.width > 0 {
+                    calcPositions(geometry: geometry)
                 }
             }
-            .onChange(of: items) {
-                checkWidthOfItems()
-                do {
-                    if config.showAnimations {
-                        try withAnimation {
-                            items = try grid.place(elements: items)
-                        }
-                    } else {
-                        items = try grid.place(elements: items)
-                    }
-                } catch {
-                    fatalError("\(error)")
+            .onAppear {
+                if geometry.size.width > 0 {
+                    calcPositions(geometry: geometry)
+                }
+            }
+            .onChange(of: items) { oldValue, newValue in
+                if geometry.size.width > 0 {
+                    calcPositions(geometry: geometry)
                 }
             }
         }
         .frame(height: (cellDimensions.height + spacing) * CGFloat(grid.maxHeight))
+    }
+    
+    func calcPositions(geometry: GeometryProxy) {
+        let cellSize = (geometry.size.width - spacing * (columns - 1)) / columns
+        cellDimensions = CGSize(width: cellSize, height: cellSize)
+        checkWidthOfItems()
+        do {
+            if config.showAnimations {
+                try withAnimation {
+                    self.items = try grid.place(elements: items)
+                }
+            } else {
+                self.items = try grid.place(elements: items)
+            }
+        } catch {
+            fatalError("\(error)")
+        }
     }
     
     /// Use this function to disable animations.

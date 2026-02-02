@@ -43,7 +43,7 @@ extension GridPoint: Comparable {
 /// Instead of using pixel-based dimensions,
 /// size is expressed in *grid units* which allows the layout to adapt automatically to different screen sizes and configurations.
 ///
-public struct GridSize: Equatable {
+public struct GridSize: Equatable, Hashable {
     /// The number of grid columns the element spans.
     public var width: Int
     /// The number of grid rows the element spans.

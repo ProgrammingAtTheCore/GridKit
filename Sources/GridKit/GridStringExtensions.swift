@@ -7,7 +7,7 @@
 
 extension GridElement: CustomStringConvertible, CustomDebugStringConvertible {
     public var description: String {
-        "Grid Element(x: \(position.x), y: \(position.y), width: \(size.width), height: \(size.height))"
+        "Grid Element(id: \(id) x: \(position.x), y: \(position.y), width: \(size.width), height: \(size.height))"
     }
     
     public var debugDescription: String {
