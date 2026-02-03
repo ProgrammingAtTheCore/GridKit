@@ -11,6 +11,7 @@ struct GridConfig {
     var isEditing: Bool = false
     var showAnimations: Bool = false
     var dragAndDrop: Bool = true
+    var allowGaps: Bool = false
     
     var deletionButtonAlignment: Alignment = .topLeading
     var deletionButtonLabel: AnyView = AnyView(Image(systemName: "minus"))
@@ -92,7 +93,7 @@ public struct GridView<Item: GridContentItem>: View {
                             withAnimation {
                                 items.removeAll(where: { $0.id == item.id })
                                 do {
-                                    items = try grid.layout(items: items)
+                                    items = try grid.layout(items: items, allowGaps: config.allowGaps)
                                 } catch {
                                     assertionFailure("Grid layout failed after deletion: \(error)")
                                 }
@@ -143,13 +144,13 @@ public struct GridView<Item: GridContentItem>: View {
             if config.showAnimations {
                 withAnimation {
                     do {
-                        items = try grid.layout(items: items)
+                        items = try grid.layout(items: items, allowGaps: config.allowGaps)
                     } catch {
                         assertionFailure("Grid layout failed: \(error)")
                     }
                 }
             } else {
-                items = try grid.layout(items: items)
+                items = try grid.layout(items: items, allowGaps: config.allowGaps)
             }
         } catch {
             assertionFailure("Grid layout failed: \(error)")
@@ -167,6 +168,13 @@ public struct GridView<Item: GridContentItem>: View {
     public func dragAndDrop(_ value: Bool = false) -> GridView {
         var copy = self
         copy.config.dragAndDrop = value
+        return copy
+    }
+
+    /// Use this function to allow empty grid gaps between elements.
+    public func allowGaps(_ value: Bool = false) -> GridView {
+        var copy = self
+        copy.config.allowGaps = value
         return copy
     }
     
@@ -203,13 +211,13 @@ public struct GridView<Item: GridContentItem>: View {
             if config.showAnimations {
                 withAnimation {
                     do {
-                        items = try grid.layout(items: items, dragging: updatedDragging)
+                        items = try grid.layout(items: items, dragging: updatedDragging, allowGaps: config.allowGaps)
                     } catch {
                         assertionFailure("Grid layout failed while dragging: \(error)")
                     }
                 }
             } else {
-                items = try grid.layout(items: items, dragging: updatedDragging)
+                items = try grid.layout(items: items, dragging: updatedDragging, allowGaps: config.allowGaps)
             }
         } catch {
             assertionFailure("Grid layout failed while dragging: \(error)")

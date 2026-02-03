@@ -27,6 +27,7 @@ public struct WidgetGridView: View {
         GridView(columns: columns, spacing: spacing, items: $widgets)
             .animate(config.showAnimations)
             .dragAndDrop(config.dragAndDrop)
+            .allowGaps(config.allowGaps)
             .editingMode(config.isEditing)
             .deletionButtonStyle(alignment: config.deletionButtonAlignment, label: {
                 config.deletionButtonLabel
@@ -44,6 +45,13 @@ public struct WidgetGridView: View {
     public func dragAndDrop(_ value: Bool = false) -> WidgetGridView {
         var copy = self
         copy.config.dragAndDrop = value
+        return copy
+    }
+
+    /// Use this function to allow empty grid gaps between elements.
+    public func allowGaps(_ value: Bool = false) -> WidgetGridView {
+        var copy = self
+        copy.config.allowGaps = value
         return copy
     }
     

@@ -26,7 +26,7 @@ public struct GridLayout {
         self.cells = Array(repeating: false, count: columns * initialRows)
     }
     
-    public mutating func layout<Item: GridLayoutItem>(items: [Item], dragging: Item? = nil) throws -> [Item] {
+    public mutating func layout<Item: GridLayoutItem>(items: [Item], dragging: Item? = nil, allowGaps: Bool = false) throws -> [Item] {
         reset()
         
         for item in items {
@@ -42,9 +42,22 @@ public struct GridLayout {
             placements[dragging.id] = dragging
         }
         
-        for item in items where item.id != dragging?.id {
-            let placed = try place(item)
-            placements[placed.id] = placed
+        if allowGaps {
+            for item in items where item.id != dragging?.id {
+                var placed = item
+                let rect = GridRect(position: item.position, size: item.size)
+                if canPlace(rect) {
+                    try occupy(for: rect)
+                } else {
+                    placed = try place(item)
+                }
+                placements[placed.id] = placed
+            }
+        } else {
+            for item in items where item.id != dragging?.id {
+                let placed = try place(item)
+                placements[placed.id] = placed
+            }
         }
         
         var result: [Item] = []
@@ -100,6 +113,11 @@ public struct GridLayout {
         let additionalRows = requiredRows - rows
         cells += Array(repeating: false, count: columns * additionalRows)
         rows = requiredRows
+    }
+
+    private mutating func canPlace(_ rect: GridRect) -> Bool {
+        ensureRows(rect.maxY + 1)
+        return isFree(for: rect)
     }
     
     private mutating func occupy(for rect: GridRect) throws {
