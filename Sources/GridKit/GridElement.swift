@@ -19,18 +19,16 @@ public protocol WidgetView: View {
 
 public struct GridItem: GridLayoutItem, Equatable {
     public let id: UUID
-    public let identifier: String
     public var position: GridPoint
     public var size: GridSize
     public var content: AnyView
     
-    public init<Content: View>(id: UUID = UUID(), identifier: String, width: Int, height: Int, @ViewBuilder content: () -> Content) {
-        self.init(id: id, identifier: identifier, size: GridSize(width: width, height: height), content: content)
+    public init<Content: View>(id: UUID = UUID(), width: Int, height: Int, @ViewBuilder content: () -> Content) {
+        self.init(id: id, size: GridSize(width: width, height: height), content: content)
     }
     
-    public init<Content: View>(id: UUID = UUID(), identifier: String, size: GridSize, @ViewBuilder content: () -> Content) {
+    public init<Content: View>(id: UUID = UUID(), size: GridSize, @ViewBuilder content: () -> Content) {
         self.id = id
-        self.identifier = identifier
         self.position = .zero
         self.size = size
         self.content = AnyView(content())
@@ -43,7 +41,6 @@ public struct GridItem: GridLayoutItem, Equatable {
 
 public struct GridWidget: GridLayoutItem, Equatable {
     public let id: UUID
-    public let identifier: String
     public var position: GridPoint
     public var size: GridSize
     public let supportedSizes: [GridSize]
@@ -54,18 +51,17 @@ public struct GridWidget: GridLayoutItem, Equatable {
         renderer(size)
     }
     
-    public init<Content: WidgetView>(id: UUID = UUID(), identifier: String, supportedSizes: [GridSize], width: Int? = nil, height: Int? = nil, @ViewBuilder content: @escaping (GridSize) -> Content) {
+    public init<Content: WidgetView>(id: UUID = UUID(), supportedSizes: [GridSize], width: Int? = nil, height: Int? = nil, @ViewBuilder content: @escaping (GridSize) -> Content) {
         if let width = width,
            let height = height {
-            self.init(id: id, identifier: identifier, supportedSizes: supportedSizes, size: GridSize(width: width, height: height), content: content)
+            self.init(id: id, supportedSizes: supportedSizes, size: GridSize(width: width, height: height), content: content)
         } else {
-            self.init(id: id, identifier: identifier, supportedSizes: supportedSizes, content: content)
+            self.init(id: id, supportedSizes: supportedSizes, content: content)
         }
     }
     
-    public init<Content: WidgetView>(id: UUID = UUID(), identifier: String, supportedSizes: [GridSize], size: GridSize? = nil, @ViewBuilder content: @escaping (GridSize) -> Content) {
+    public init<Content: WidgetView>(id: UUID = UUID(), supportedSizes: [GridSize], size: GridSize? = nil, @ViewBuilder content: @escaping (GridSize) -> Content) {
         self.id = id
-        self.identifier = identifier
         self.position = .zero
         self.supportedSizes = supportedSizes
         let resolvedSize = size ?? supportedSizes[0]
@@ -83,6 +79,6 @@ public struct GridWidget: GridLayoutItem, Equatable {
     }
     
     public static func == (lhs: GridWidget, rhs: GridWidget) -> Bool {
-        lhs.id == rhs.id && lhs.identifier == rhs.identifier && lhs.position == rhs.position && lhs.size == rhs.size && lhs.supportedSizes == rhs.supportedSizes
+        lhs.id == rhs.id && lhs.position == rhs.position && lhs.size == rhs.size && lhs.supportedSizes == rhs.supportedSizes
     }
 }
