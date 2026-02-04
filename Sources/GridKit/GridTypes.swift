@@ -11,7 +11,7 @@ public enum GridError: Error, Equatable {
     case invalidItemSize(size: GridSize, columns: Int)
 }
 
-public struct GridPoint: Equatable, Hashable {
+public struct GridPoint: Equatable, Hashable, Codable {
     public var x: Int
     public var y: Int
     
@@ -43,7 +43,7 @@ extension GridPoint: Comparable {
 /// Instead of using pixel-based dimensions,
 /// size is expressed in *grid units* which allows the layout to adapt automatically to different screen sizes and configurations.
 ///
-public struct GridSize: Equatable, Hashable {
+public struct GridSize: Equatable, Hashable, Codable {
     /// The number of grid columns the element spans.
     public var width: Int
     /// The number of grid rows the element spans.
