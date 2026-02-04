@@ -87,7 +87,7 @@ public struct FlexGrid<Item: GridLayoutItem>: View {
                         )
                 }
             }
-            .onChange(of: geometry.size.width, { _, _ in
+            .onChange(of: geometry.size.width, {
                 if geometry.size.width > 0 {
                     calcDimensions(geometry: geometry)
                     calcPosition()
@@ -98,6 +98,9 @@ public struct FlexGrid<Item: GridLayoutItem>: View {
                     calcDimensions(geometry: geometry)
                     calcPosition()
                 }
+            }
+            .onChange(of: items) {
+                calcPosition()
             }
         }
         .frame(height: totalHeight)

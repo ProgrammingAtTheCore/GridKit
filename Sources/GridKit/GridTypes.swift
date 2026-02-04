@@ -11,7 +11,7 @@ public enum GridError: Error {
     case invalidItemSize(size: GridSize, columns: Int)
 }
 
-public struct GridPoint: Equatable, Sendable, Comparable {
+public struct GridPoint: Equatable, Sendable, Comparable, Codable {
     public var x: Int
     public var y: Int
     
@@ -34,7 +34,7 @@ public struct GridPoint: Equatable, Sendable, Comparable {
     }
 }
 
-public struct GridSize: Equatable, Sendable {
+public struct GridSize: Equatable, Sendable, Codable {
     public var width: Int
     public var height: Int
     
