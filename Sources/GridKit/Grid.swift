@@ -5,28 +5,25 @@
 //  Created by ProgrammingAtTheCore on 10/31/2025.
 //
 
-public protocol GridLayoutItem: Identifiable {
-    var position: GridPoint { get set }
-    var size: GridSize { get set }
-}
-
-public struct GridLayout {
+public struct GridMap {
     public let columns: Int
     public private(set) var rows: Int
     
     private let initialRows: Int
     var cells: [Bool]
     
-    public init(columns: Int, initialRows: Int = 1) {
+    public init(columns: Int, initialRows: Int) {
         precondition(columns > 0, "columns must be greater than 0")
         precondition(initialRows > 0, "initialRows must be greater than 0")
+        
         self.columns = columns
         self.initialRows = initialRows
+        
         self.rows = initialRows
         self.cells = Array(repeating: false, count: columns * initialRows)
     }
     
-    public mutating func layout<Item: GridLayoutItem>(items: [Item], dragging: Item? = nil) throws -> [Item] {
+    public mutating func layout<Item: GridLayoutItem>(items: [Item], dragging: Item? = nil, allowGaps: Bool = false) throws -> [Item] {
         reset()
         
         for item in items {
@@ -42,9 +39,22 @@ public struct GridLayout {
             placements[dragging.id] = dragging
         }
         
-        for item in items where item.id != dragging?.id {
-            let placed = try place(item)
-            placements[placed.id] = placed
+        if allowGaps {
+            for item in items where item.id != dragging?.id {
+                var placed = item
+                let rect = GridRect(position: item.position, size: item.size)
+                if canPlace(rect) {
+                    try occupy(for: rect)
+                } else {
+                    placed = try place(item)
+                }
+                placements[placed.id] = placed
+            }
+        } else {
+            for item in items where item.id != dragging?.id {
+                let placed = try place(item)
+                placements[placed.id] = placed
+            }
         }
         
         var result: [Item] = []
@@ -60,7 +70,7 @@ public struct GridLayout {
             result.append(dragging)
         }
         
-        rows = max(rows, (result.map { $0.position.y + $0.size.height }.max() ?? 1))
+        rows = max(rows, (result.map({ $0.position.y + $0.size.height }).max() ?? 1))
         return result
     }
     
@@ -73,7 +83,7 @@ public struct GridLayout {
         while true {
             ensureRows(row + item.size.height)
             for column in 0...(columns - item.size.width) {
-                let rect = GridRect(x: column, y: row, width: item.size.width, height: item.size.height)
+                let rect = GridRect(position: GridPoint(x: column, y: row), size: item.size)
                 if isFree(for: rect) {
                     try occupy(for: rect)
                     placed.position = GridPoint(x: column, y: row)
@@ -102,20 +112,25 @@ public struct GridLayout {
         rows = requiredRows
     }
     
+    private mutating func canPlace(_ rect: GridRect) -> Bool {
+        ensureRows(rect.maxY + 1)
+        return isFree(for: rect)
+    }
+    
     private mutating func occupy(for rect: GridRect) throws {
         ensureRows(rect.maxY + 1)
         try validate(rect: rect)
         if !isFree(for: rect) {
-            throw GridError.occupied(position: rect.position)
+            throw GridError.occupied(rect: rect)
         }
-        for position in rect.positions {
+        for position in rect.occupied {
             cells[cellIndex(for: position)] = true
         }
     }
     
     private func isFree(for rect: GridRect) -> Bool {
         guard rect.maxX < columns else { return false }
-        for position in rect.positions {
+        for position in rect.occupied {
             if cells[cellIndex(for: position)] { return false }
         }
         return true

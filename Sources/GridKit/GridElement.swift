@@ -7,17 +7,13 @@
 
 import SwiftUI
 
-public protocol GridContentItem: GridLayoutItem {
+public protocol GridLayoutItem: Identifiable {
+    var position: GridPoint { get set }
+    var size: GridSize { get set }
     var content: AnyView { get }
 }
 
-/// A structure that defines the visual appearance and size of an item within the ``GridView``.
-///
-/// # Overview
-/// A ``GridItem`` represents a single item within the ``GridView``.
-/// Each item defines its own size in terms of grid units (``GridSize``),
-/// along with the view content it renders.
-public struct GridItem: GridContentItem, Equatable {
+public struct GridItem: GridLayoutItem, Equatable {
     public let id: UUID
     public var position: GridPoint
     public var size: GridSize
@@ -37,22 +33,12 @@ public struct GridItem: GridContentItem, Equatable {
         self.content = AnyView(content())
     }
     
-    public init(id: UUID = UUID(), size: GridSize, content: AnyView) {
-        self.id = id
-        self.position = .zero
-        self.size = size
-        self.content = content
-    }
-    
     public static func == (lhs: GridItem, rhs: GridItem) -> Bool {
         lhs.id == rhs.id && lhs.position == rhs.position && lhs.size == rhs.size
     }
 }
 
-/// A widget that can render different layouts depending on its active size.
-///
-/// Widgets advertise multiple supported sizes and pick one active size to render.
-public struct GridWidget: GridContentItem, Equatable {
+public struct GridWidget: GridLayoutItem, Equatable {
     public let id: UUID
     public var position: GridPoint
     public var size: GridSize
@@ -64,13 +50,7 @@ public struct GridWidget: GridContentItem, Equatable {
         renderer(size)
     }
     
-    public init<Content: View>(
-        id: UUID = UUID(),
-        supportedSizes: [GridSize],
-        size: GridSize? = nil,
-        @ViewBuilder content: @escaping (GridSize) -> Content
-    ) {
-        precondition(!supportedSizes.isEmpty, "supportedSizes must not be empty")
+    public init<Content: View>(id: UUID = UUID(), supportedSizes: [GridSize], size: GridSize? = nil, @ViewBuilder content: @escaping (GridSize) -> Content) {
         self.id = id
         self.position = .zero
         self.supportedSizes = supportedSizes
@@ -80,10 +60,7 @@ public struct GridWidget: GridContentItem, Equatable {
     }
     
     public mutating func setSize(_ size: GridSize) {
-        guard supportedSizes.contains(size) else {
-            self.size = supportedSizes[0]
-            return
-        }
+        guard supportedSizes.contains(size) else { return }
         self.size = size
     }
     
@@ -95,6 +72,3 @@ public struct GridWidget: GridContentItem, Equatable {
         lhs.id == rhs.id && lhs.position == rhs.position && lhs.size == rhs.size && lhs.supportedSizes == rhs.supportedSizes
     }
 }
-
-@available(*, deprecated, message: "Use GridItem")
-public typealias GridElement = GridItem
