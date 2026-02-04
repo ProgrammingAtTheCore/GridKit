@@ -13,6 +13,10 @@ public protocol GridLayoutItem: Identifiable {
     var content: AnyView { get }
 }
 
+public protocol WidgetView: View {
+    var size: GridSize { get set }
+}
+
 public struct GridItem: GridLayoutItem, Equatable {
     public let id: UUID
     public var position: GridPoint
@@ -50,7 +54,7 @@ public struct GridWidget: GridLayoutItem, Equatable {
         renderer(size)
     }
     
-    public init<Content: View>(id: UUID = UUID(), supportedSizes: [GridSize], size: GridSize? = nil, @ViewBuilder content: @escaping (GridSize) -> Content) {
+    public init<Content: WidgetView>(id: UUID = UUID(), supportedSizes: [GridSize], size: GridSize? = nil, @ViewBuilder content: @escaping (GridSize) -> Content) {
         self.id = id
         self.position = .zero
         self.supportedSizes = supportedSizes

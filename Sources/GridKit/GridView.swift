@@ -9,7 +9,7 @@ import SwiftUI
 
 struct GridConfig {
     var isEditing: Bool = false
-    var showAnimations: Bool = false
+    var showAnimations: Bool = true
     var dragAndDrop: Bool = true
     var allowGaps: Bool = false
 }
@@ -87,6 +87,12 @@ public struct FlexGrid<Item: GridLayoutItem>: View {
                         )
                 }
             }
+            .onChange(of: geometry.size.width, { _, _ in
+                if geometry.size.width > 0 {
+                    calcDimensions(geometry: geometry)
+                    calcPosition()
+                }
+            })
             .onAppear {
                 if geometry.size.width > 0 {
                     calcDimensions(geometry: geometry)
