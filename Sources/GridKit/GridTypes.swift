@@ -9,9 +9,10 @@ public enum GridError: Error {
     case outOfBounds(rect: GridRect)
     case occupied(rect: GridRect)
     case invalidItemSize(size: GridSize, columns: Int)
+    case internalError
 }
 
-public struct GridPoint: Equatable, Sendable, Comparable, Codable {
+public struct GridPoint: Equatable, Sendable, Comparable, Codable, Hashable {
     public var x: Int
     public var y: Int
     
@@ -34,7 +35,7 @@ public struct GridPoint: Equatable, Sendable, Comparable, Codable {
     }
 }
 
-public struct GridSize: Equatable, Sendable, Codable {
+public struct GridSize: Equatable, Sendable, Codable, Hashable {
     public var width: Int
     public var height: Int
     
@@ -47,6 +48,32 @@ public struct GridSize: Equatable, Sendable, Codable {
         self.width = width
         self.height = height
     }
+}
+
+extension Array where Element == GridSize {
+    func closestMatch(for target: GridSize) -> GridSize? {
+            guard !self.isEmpty else { return nil }
+            if self.contains(target) {
+                return target
+            }
+            let fittingSizes = self.filter { size in
+                size.width <= target.width && size.height <= target.height
+            }
+            if let bestFit = fittingSizes.max(by: { ($0.width * $0.height) < ($1.width * $1.height) }) {
+                return bestFit
+            }
+            return self.min { a, b in
+                let areaA = a.width * a.height
+                let areaB = b.width * b.height
+                if areaA == areaB {
+                    let diffA = abs(a.width - target.width) + abs(a.height - target.height)
+                    let diffB = abs(b.width - target.width) + abs(b.height - target.height)
+                    return diffA < diffB
+                }
+                
+                return areaA < areaB
+            }
+        }
 }
 
 public struct GridRect : Sendable {
